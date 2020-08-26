@@ -15,7 +15,10 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Gma.QrCodeNet.Encoding;
 using Gma.QrCodeNet.Encoding.Windows.Render;
+using Gma.QrCodeNet;
 using Microsoft.Win32;
+using ZXing;
+using System.Drawing;
 
 namespace Hello
 {
@@ -108,6 +111,45 @@ namespace Hello
 			return result;
         }
 
+		private static string GetQrcodeContentByImageFile(string filename)
+        {
+			// create a barcode reader instance
+			IBarcodeReader reader = new BarcodeReader();
+			// load a bitmap
+			var barcodeBitmap = (Bitmap)System.Drawing.Image.FromFile(filename);
+			// detect and decode the barcode inside the bitmap
+			var result = reader.Decode(barcodeBitmap);
+			// do something with the result
+			if (result != null)
+			{
+				string t = result.Text;
+				return t;
+				//Console.WriteLine(t);
+				//txtDecoderType.Text = result.BarcodeFormat.ToString();
+				//txtDecoderContent.Text = result.Text;
+			}
+			return "";
+		}
+
+		private static string GetWifiMessage(string wifi)
+        {
+            try
+            {
+				string u = wifi.Remove(0, "WIFI:".Length);
+				u = u.Remove(u.Length - 2);
+				string[] b = u.Split(';');
+				string type = b[0].Substring(2);
+                string name = b[1].Substring(2);
+                string password = b[2].Substring(2);
+                return string.Format("名称: {0}\n密码: {1}\n加密类型: {2}", name, password, type);
+            }
+            catch (Exception)
+            {
+
+				return "解析失败";
+            }
+        }
+
 
 		private void OpenFileButton(object sender, RoutedEventArgs e)
 		{
@@ -119,7 +161,16 @@ namespace Hello
             {
 				if ((bool)openfiledialog.ShowDialog())
 				{
-					qrcodeImg.Source = new BitmapImage(new Uri(openfiledialog.FileName));
+					string filename = openfiledialog.FileName;
+					string data = GetQrcodeContentByImageFile(filename);
+					if (data.IndexOf("WIFI:") == 0)
+                    {
+						string b = GetWifiMessage(data);
+						MessageBox.Show(b);
+                    } else
+                    {
+						MessageBox.Show("读取错误");
+                    }
 				}
 			}
             catch (Exception)
